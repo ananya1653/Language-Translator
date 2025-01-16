@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Language Translator with Speech</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Language Translator with Speech Integration</h1>
+        <form id="translation-form" method="POST" action="/">
+            <label for="text">Enter Text:</label>
+            <textarea id="text" name="text" rows="5" placeholder="Enter text here..."></textarea>
+            <button type="button" onclick="startSpeechRecognition()">🎤 Speak</button>
+            
+            <label for="source_lang">Source Language:</label>
+            <select id="source_lang" name="source_lang">
+                <option value="auto">Detect Language</option>
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="hi">Hindi</option>
+            </select>
+
+            <label for="target_lang">Target Language:</label>
+            <select id="target_lang" name="target_lang">
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="hi">Hindi</option>
+            </select>
+
+            <button type="submit">Translate</button>
+        </form>
+
+        <h2>Translated Text:</h2>
+        <div id="translated-text">{{ translation or '' }}</div>
+        
+        {% if translation %}
+            <button type="button" onclick="playAudio()">🔊 Listen</button>
+        {% endif %}
+
+        <a href="/">Clear</a>
+    </div>
+
+    <script>
+        // Speech-to-Text Integration
+        function startSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                alert("Speech Recognition API is not supported in this browser. Please use Google Chrome.");
+                return;
+            }
+
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            const sourceLang = document.getElementById("source_lang").value || "en-US"; // Default to English
+            recognition.lang = sourceLang;
+            recognition.interimResults = false; 
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = function () {
+                console.log("Speech recognition started.");
+            };
+
+            recognition.onspeechend = function () {
+                console.log("Speech ended.");
+                recognition.stop();
+            };
+
+            recognition.onresult = function (event) {
+                const transcript = event.results[0][0].transcript;
+                console.log("Speech recognized: ", transcript);
+                document.getElementById("text").value = transcript; 
+            };
+
+            recognition.onerror = function (event) {
+                console.error("Speech recognition error: ", event.error);
+                alert("Speech recognition failed. Error: " + event.error);
+            };
+
+            recognition.start();
+        }
+
+        // Text-to-Speech Integration
+        function playAudio() {
+            const audio = new Audio("{{ url_for('speak') }}");
+            audio.play();
+        }
+    </script>
+</body>
+</html>
